@@ -2,6 +2,8 @@ organization in ThisBuild := "com.mediative"
 name in ThisBuild         := "eigenflow"
 scalaVersion in ThisBuild := "2.11.7"
 
+Jvm.`1.8`.required
+
 // Dependencies
 resolvers += Resolver.bintrayRepo("krasserm", "maven")
 
