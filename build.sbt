@@ -1,29 +1,11 @@
-name := "eigenflow"
+organization in ThisBuild := "com.mediative"
+name in ThisBuild         := "eigenflow"
+scalaVersion in ThisBuild := "2.11.7"
 
-organization := "com.mediative"
-
-version := "0.1.0"
-
-scalaVersion := "2.11.7"
-
-scalacOptions ++= Seq(
-  "-feature",
-  "-unchecked",
-  "-deprecation",
-  "-encoding", "UTF-8",
-  "-Xfatal-warnings",
-  "-Xlint",
-  "-Xfuture",
-  "-Yno-adapted-args",
-  "-Ywarn-dead-code",
-  "-Ywarn-value-discard"
-  )
-
-scalariformSettings
-
+Jvm.`1.8`.required
 
 // Dependencies
-resolvers += "krasserm at bintray" at "http://dl.bintray.com/krasserm/maven"
+resolvers += Resolver.bintrayRepo("krasserm", "maven")
 
 val akkaVersion = "2.4.1"
 val kafkaVersion = "0.9.0.0"
@@ -41,3 +23,5 @@ libraryDependencies ++= Seq(
   // json
   "com.lihaoyi" %% "upickle" % "0.3.6"
 )
+
+enablePlugins(MediativeReleasePlugin, MediativeBintrayPlugin)
