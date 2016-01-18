@@ -1,0 +1,157 @@
+#!/bin/bash
+
+vm_name="default"
+cql_port=9042
+internode_port=7000
+declare -a cassandra_ports=("$cql_port" "$internode_port")
+
+zookeeper_port=2181
+kafka_port=9092
+declare -a kafka_ports=("$zookeeper_port" "$kafka_port")
+kafka_docker="kafka"
+
+cassandra_image_name="cassandra"
+cassandra_docker="cassandra:2.2.4"
+kafka_image_name="kafka"
+kafka_docker="spotify/kafka"
+
+cqlsh_docker="cqlsh:2.1.11"
+
+function error {
+  echo $1
+  exit 1
+}
+
+function set_docker {
+  docker-machine ls | grep -q $vm_name
+  if [ $? -eq 1 ]; then
+    docker-machine create --driver virtualbox $vm_name
+  fi
+
+  vm_status=`docker-machine status $vm_name`
+
+  if [[ "$vm_status" != "Running" ]]; then
+    VBoxManage startvm $vm_name
+    error "Wait until the VM starts and re-run the command"
+  fi
+
+  eval $(docker-machine env $vm_name)
+}
+
+function check_nat_rule {
+  rule_name=$1
+  port=$2
+
+  VBoxManage showvminfo $vm_name | grep -q "host port = $port"
+  if [ $? -eq 1 ]; then
+    echo "setting up nat rule $rule_name"
+    VBoxManage controlvm $vm_name natpf1 "$rule_name,tcp,,$port,,$port"
+  fi
+}
+
+function setup_ports {
+  declare -a ports=("${!1}")
+  for port in "${ports[@]}"
+  do
+    check_nat_rule "tcp-$port" $port
+  done
+}
+
+
+function run_kafka {
+  docker ps -a -q --filter="name=$kafka_image_name" | xargs docker rm -f
+  docker run --name $kafka_image_name -d -p $zookeeper_port:$zookeeper_port -p $kafka_port:$kafka_port --env ADVERTISED_HOST=$1 --env ADVERTISED_PORT=$kafka_port $kafka_docker
+}
+
+function run_cassandra {
+  ip=$1
+  docker ps -a -q --filter="name=$cassandra_image_name" | xargs docker rm -f
+  docker run --name $cassandra_image_name -d -e CASSANDRA_BROADCAST_ADDRESS=$ip -p $cql_port:$cql_port -p $internode_port:$internode_port $cassandra_docker
+}
+
+function start {
+  set_docker
+
+  ip=`docker-machine ip $vm_name`
+
+  run_cassandra $ip
+  run_kafka $ip
+
+  echo "To see the containers states run '$0 state'"
+  echo "To connect to cassandra run '$0 cql'"
+  echo "To generate eigenflow application config run '$0 config'"
+}
+
+function setup {
+  command VBoxManage > /dev/null 2>&1 || error "Please install VirtualBox"
+  command docker > /dev/null 2>&1 || error "Please install docker for Mac OS"
+  command docker-machine > /dev/null 2>&1 || error "Please install docker for Mac OS"
+
+  set_docker
+
+  setup_ports cassandra_ports[@]
+  setup_ports kafka_ports[@]
+
+  echo "Done! run'$0 start'"
+}
+
+function config {
+  ip=`docker-machine ip $vm_name`
+
+cat << EOM
+akka.persistence.journal.plugin = "cassandra-journal"
+cassandra-journal.contact-points = ["$ip:$cql_port"]
+
+eigenflow.kafka.bootstrap.servers = "$ip:$kafka_port"
+EOM
+}
+
+function stop {
+  set_docker
+  docker ps -q --filter="name=$kafka_image_name" | xargs docker stop > /dev/null
+  docker ps -q --filter="name=$cassandra_image_name" | xargs docker stop > /dev/null
+}
+
+function status {
+  set_docker
+  docker ps
+}
+
+function cql {
+  set_docker
+  ip=`docker-machine ip $vm_name`
+  docker ps -a -q --filter="name=cqlsh" | xargs docker rm -f > /dev/null
+  docker run --name cqlsh -it --link $cassandra_image_name:cassandra --rm cassandra sh -c "cqlsh $cassandra_image_name"
+}
+
+function state {
+  set_docker
+  docker ps
+}
+
+case $1 in
+    setup)
+      setup
+    ;;
+    start)
+      start
+    ;;
+    stop)
+      stop
+    ;;
+    config)
+      config
+    ;;
+    cql)
+      cql
+    ;;
+    state)
+      state
+    ;;
+    docker)
+      docker-machine env $vm_name
+    ;;
+    *)
+      error "USAGE: $0 setup|start|stop|state|config|cql|docker"
+    ;;
+esac

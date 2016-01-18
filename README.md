@@ -319,3 +319,36 @@ Be aware: if `retriesTimeout` is specified and the system was down for a period 
 it will fail on start right away, must be restarted again to start over, see point below.
 1. If number of retries exhausted and process exits with failed stage, then the next time it starts, it re-runs the failed stage
   with all counters reset to 0.
+
+
+## DevOps
+
+For a quick start on Mac OS use devops/mac/eigenflow script:
+
+Check docker installation and setup ports forwarding
+```
+$ ./eigenflow setup
+```
+
+Start containers
+```
+$ ./eigenflow start
+```
+Note: The state will be reset on every start (empty database and message queues).
+
+
+Check docker container the status
+```
+$ ./eigenflow state
+```
+
+
+Print `eigenflow` configuration suggestion
+```
+$ ./eigenflow config
+```
+
+Stop containers
+```
+$ ./eigenflow stop
+```
