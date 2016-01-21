@@ -2,6 +2,12 @@
 
 Eigenflow is an orchestration platform which allows to build resilient and scalable data pipelines.
 
+
+It is created for periodic long running ETL processes where restarting from the beginning in case of failures is critical.
+
+Eigenflow encourages process developers to split processes in stages which can be persisted and monitored automatically.
+
+
 Quick example:
 
 ```
@@ -15,7 +21,7 @@ val download = Download {
 } retry (1.minute, 10) // in case of error retry every minute 10 times before failing
 
 val transform = Transform { reportFile =>
-  buildParquet(reportFile) // returns file path/url
+  buildParquetFile(reportFile) // returns file path/url
 }
 
 val analyze = Analyze { parquetFile =>
@@ -29,12 +35,21 @@ val sendReport = SendReport { newReportFile =>
 override def executionPlan = download ~> transform ~> analyze
 ```
 
-You just need to define the logic of stage methods (`downloadReport`, `buildParquet` etc in the example above) the rest
+You just need to define the logic of stage methods (`downloadReport`, `buildParquetFile` etc in the example above) the rest
 will be done automatically, namely:
 
 * The system will automatically do "checkpoints" on every stage switch, thus in case of failure it restarts by running the
 failed stage again.
 * It can automatically catch-up by processing missing days, and many more - see [complete list of features](#main-features).
+
+Platform limitations:
+
+* Supports scala language only.
+* Hardly pays off for simple atomic jobs (one stage process).
+* Does not provide connectors to 3rd party systems.
+* It is not a replacement for ESB or BPM systems, in cases when a very complex workflow involved and there is a need for
+  UI to draw the processes it's better to consider another products.
+
 
 ## Main Features
 
