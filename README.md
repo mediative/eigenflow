@@ -1,11 +1,8 @@
-# eigenflow
+# Eigenflow [![Build Status](https://travis-ci.org/ypg-data/eigenflow.svg?branch=master)](https://travis-ci.org/ypg-data/eigenflow)
 
-Eigenflow is an orchestration platform which allows to build resilient and scalable data pipelines.
+Eigenflow is an orchestration platform for building resilient and scalable data pipelines.
 
-
-It is created for periodic long running ETL processes where restarting from the beginning in case of failures is critical.
-
-Eigenflow encourages process developers to split processes in stages which can be persisted and monitored automatically.
+Pipelines can be split into multiple process stages which are persisted, resumed and monitored automatically.
 
 
 Quick example:
@@ -35,58 +32,48 @@ val sendReport = SendReport { newReportFile =>
 override def executionPlan = download ~> transform ~> analyze
 ```
 
-You just need to define the logic of stage methods (`downloadReport`, `buildParquetFile` etc in the example above) the rest
-will be done automatically, namely:
+Once the stage methods (`downloadReport`, `buildParquetFile` etc in the example above) are defined the rest
+is done automatically: see [complete list of features](#main-features).
 
-* The system will automatically do "checkpoints" on every stage switch, thus in case of failure it restarts by running the
-failed stage again.
-* It can automatically catch-up by processing missing days, and many more - see [complete list of features](#main-features).
+### What it is good for
 
-Platform limitations:
+`Eigenflow` was created for managing periodic long-running ETL processes with automatic recovery of failures.
+When stages performance is important and there is a need to collect statistics and monitor processes.
 
-* Supports scala language only.
-* Hardly pays off for simple atomic jobs (one stage process).
-* Does not provide connectors to 3rd party systems.
-* It is not a replacement for ESB or BPM systems, in cases when a very complex workflow involved and there is a need for
-  UI to draw the processes it's better to consider another products.
 
+### What it may not be good for
+
+`Eigenflow` is a platform somewhere between "simple cron jobs" and complex enterprise processes,
+where an ESB software would usually be used.
+Thus, it probably should not be considered for primitive jobs and very complex processes where SOA is involved.
+
+
+*This project is using travis for continuous integration: https://travis-ci.org/ypg-data/eigenflow*
 
 ## Main Features
 
-* Stages: the platform encourage developers to split processes in stages,
-where the result of a stage processing will be an input of the next stage.
+* Stages: DSL for building type safe data pipeline (Scala only).
 * Time Management: configurable strategy for catching up when "run cycles" are missing.
 * Recovery: if a process failed the platform starts replaying the failed stage, by default.
 * Error Handling: configurable recovery strategies per stage.
 * Metrics: Each `process run`, `stage switch or failure` and `custom messages` are published as events to a messaging system.
-Kafka is supported by default, but a custom messaging system adapter can be easily integrated.
-* Monitoring: A module which exports metrics to InfluxDB based on metrics events is provided independently.
-A custom monitoring system can be developed based on metrics messages published by `Eigenflow`.
-Internally we use `grafana` and `influxDB` to monitor processes.
-* Notifications: A module which sends notifications to an `email` and `slack` is also provided independently.
-A custom monitoring system can be developed based on metrics messages published by `Eigenflow`.
-* DSL: an elegant DSL is provided to describe `stages`, `stage transitions`, `retry strategies` and `custom events publishing`.
+Kafka is supported by default, but a custom messaging system adapter can be integrated.
+* Monitoring: provided as a module, which uses `grafana` and `influxDB` to store and display statistics.
+* Notifications: provided as a module, supports `email` and `slack` notifications.
+
+Custom monitoring and notification systems can be developed.
+Messages are pushed to a message queue (Kafka is supported out of the box) and can be consumed by a message queue consumer.
+
+Note: there is no connectors to 3rd party systems out of the box.
+
 
 ## Getting Started
 
 #### SBT
 
-project/plugins.sbt
-
-```javascript
-resolvers += Resolver.url("YPG-Data SBT Plugins", url("https://dl.bintray.com/ypg-data/sbt-plugins"))(Resolver.ivyStylePatterns)
-
-addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.1")
-addSbtPlugin("com.mediative.sbt" % "sbt-mediative-core" % "0.1.1")
-addSbtPlugin("com.mediative.sbt" % "sbt-mediative-oss" % "0.1.1")
-```
-
 build.sbt
 
 ```javascript
-resolvers += Resolver.bintrayRepo("ypg-data", "maven")
-resolvers += Resolver.bintrayRepo("krasserm", "maven")
-
 libraryDependencies ++= Seq(
   "com.mediative" %% "eigenflow" % "0.1.0"
 )
@@ -160,7 +147,7 @@ sbt run
 ```
 
 
-Note: by default it uses akka inmem storage and PrintMessagingSystem (which simply prints messages to logs), what means it won't restore after a failure.
+Note: by default it uses Akka inmem storage and PrintMessagingSystem (which simply prints messages to logs), what means it won't restore after a failure.
 
 To configure storage and messaging system use `application.conf`
 
@@ -274,7 +261,7 @@ TODO: examples
 
 ### Recovery
 
-`eigenflow` remembers the last stage and the processing date.
+`Eigenflow` remembers the last stage and the processing date.
 Thus if a process fails or crashes, it will re-run the failed stage automatically when restarted.
 When processing is complete for a date the `nextProcessingDate` function will be called to define if it should "catch-up".
 If the `nextProcessingDate` returns a date in the past the process continues to run with the new date until the `nextProcessingDate`
@@ -336,6 +323,19 @@ it will fail on start right away, must be restarted again to start over, see poi
   with all counters reset to 0.
 
 
+## System Requirements
+
+### Runtime
+
+* JVM 8
+
+### Development
+
+* Scala 2.11.0 or higher
+* Sbt 0.13.7
+* DevOps scripts are currently tested on Mac OS 10.10 only
+
+
 ## DevOps
 
 For a quick start on Mac OS use devops/mac/eigenflow script:
@@ -358,7 +358,7 @@ $ ./eigenflow state
 ```
 
 
-Print `eigenflow` configuration suggestion
+Print `Eigenflow` configuration suggestion
 ```
 $ ./eigenflow config
 ```
