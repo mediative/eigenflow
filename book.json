@@ -1,0 +1,13 @@
+{
+  "gitbook": "2.x.x",
+  "links": {
+    "sidebar": {
+      "Project": "https://github.com/ypg-data/eigenflow",
+      "Issues": "https://github.com/ypg-data/eigenflow/issues"
+    }
+  },
+  "plugins": [
+    "toc",
+    "mermaid-2"
+  ]
+}

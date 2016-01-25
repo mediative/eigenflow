@@ -1,0 +1,6 @@
+*.properties
+*.sbt
+*.sh
+*.yml
+LICENSE
+src/
