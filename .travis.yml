@@ -1,19 +1,34 @@
 # Use container-based infrastructure
 sudo: false
 
-language: scala
-scala: 2.11.7
-jdk: oraclejdk8
-
-script:
-  - sbt ++$TRAVIS_SCALA_VERSION reformat-code-check test
-
-  # Tricks to avoid unnecessary cache updates
-  - find $HOME/.sbt -name "*.lock" | xargs rm
-  - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
-
 # These directories are cached at the end of the build
 cache:
   directories:
     - $HOME/.ivy2/cache
-    - $HOME/.sbt/boot/
+    - $HOME/.sbt/boot
+    - $HOME/.gitbook
+    - node_modules
+
+language: scala
+scala: 2.11.7
+jdk: oraclejdk8
+
+before_install:
+  - npm set progress=false
+  - npm install -g --prefix node_modules/ gitbook-cli
+  - export PATH="$PATH:$PWD/node_modules/bin/"
+  - gitbook install
+
+script:
+  - sbt ++$TRAVIS_SCALA_VERSION reformat-code-check test
+  # Tricks to avoid unnecessary cache updates
+  - find $HOME/.sbt -name "*.lock" | xargs rm
+  - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
+
+after_success:
+  - gitbook build
+  - devops/deploy-site.sh
+
+env:
+  global:
+    secure: yrcbEYhkF5R7LxM5OhydLsuwabxK/k9Ry2Z8a6tJyEMMDZWiO3POo750zjbeGHwRrfTCnoBE6Vtz2vP/0or83u2sX/R2cENwqLd8Ii+mQyB/S++7a77nfue4C9y7HaOsRqVj4n4UWQKLuLmmt778qr+Cp5ORV19aGXKhBgDuMCd4Xc+/+x/sryh4tj3Lmm9VFnfLpmrez8Gx+2i0/yVPoSoeV+l9/NfySIe0rpO8p5OJSqBHCgFfVP7HnchdXzbjEZSofu2n20geG+fB+LDOrdHoAcOCZ0jpHe6pGAJftvu/44JoJobAjTvrgd+dd/5G9SsOIp2cJgp24uScmFo4SPGl27HQ7jm6stem1XF5jlxg00XUIrxPJ5S+L+rqIlAQGg4t6HEacoIKcA3nTNdvAA8c6hwDgsGVvtgem5EPoGZbXcGecaIbM2HSaBXrwYV/OpZQynjKqvpkkN9lqqOVP0knxgr0N6Vsvuy+Z6S3MNRjmtcw/wrRLQ9NJqW14MvS0tW5RJw4rWxlpd0yyPz4U+gvVaaMGF5aBaxKKOTtWJJpc8+xMTG3cOoIhGqAEa45PUrNpjn4elOKXR3MLVsIplc5mN3aE1enZtd3XeSW/EchDzxZGTfwgmCiha0e/SKQ9L5n5unaac8w+EWL0wHmjaSgWBGSLqZopy3c87ZZ0r4=
