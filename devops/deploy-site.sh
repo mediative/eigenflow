@@ -47,6 +47,7 @@ REPO_NAME="${REPO_SLUG#*/}"
 REPO_CACHE=".git/$REPO_ORG.github.io"
 REPO_URL="$REPO_URL_PREFIX$REPO_ORG/$REPO_ORG.github.io.git"
 
+echo "Pushing to $REPO_ORG/$REPO_ORG.github.io.git"
 git init "$REPO_CACHE"
 
 cd "$REPO_CACHE"

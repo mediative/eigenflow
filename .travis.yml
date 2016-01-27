@@ -18,18 +18,9 @@ script:
   - find $HOME/.sbt -name "*.lock" | xargs rm
   - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
 
-before_deploy:
+after_success:
   - gitbook build
-
-deploy:
-  provider: script
-  script: devops/deploy-site.sh
-  skip_cleanup: true
-  on:
-    all_branches: true
-
-#    branch: master
-#    condition: $TRAVIS_PULL_REQUEST = false
+  - devops/deploy-site.sh
 
 # These directories are cached at the end of the build
 cache:
