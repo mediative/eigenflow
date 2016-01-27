@@ -37,6 +37,7 @@ BUILD_INFO="${TRAVIS_REPO_SLUG:-local}@$COMMIT ($BUILD_ID)"
 if [ -z "${GH_TOKEN:-}" ]; then
   REPO_SLUG="$(git config remote.origin.url | sed -n 's#.*[:/]\(.*/.*\).git#\1#p')"
   REPO_URL_PREFIX="git@github.com:"
+  echo "GH_TOKEN not defined using SSH"
 else
   REPO_SLUG="$TRAVIS_REPO_SLUG"
   REPO_URL_PREFIX="https://$GH_TOKEN@github.com/"
