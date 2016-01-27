@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Mediative
+ * Copyright 2016 Mediative
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,4 +21,6 @@ import scala.language.implicitConversions
 object PrimitiveImplicits {
   implicit def int2String(value: Int): String = value.toString
   implicit def string2Int(value: String): Int = Integer.parseInt(value)
+  implicit def unit2String(value: Unit): String = value.toString
+  implicit def string2Unit(value: String): Unit = ()
 }

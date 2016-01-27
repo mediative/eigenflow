@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Mediative
+ * Copyright 2016 Mediative
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package com.mediative.eigenflow.domain
+
+import com.mediative.eigenflow.domain.RecoveryStrategy.Retry
 
 /**
  * Registry for the stage retries.

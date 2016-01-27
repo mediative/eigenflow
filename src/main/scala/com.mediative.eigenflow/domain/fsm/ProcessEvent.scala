@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Mediative
+ * Copyright 2016 Mediative
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.mediative.eigenflow.domain.fsm
 
-import com.mediative.eigenflow.domain.Retry
+import com.mediative.eigenflow.domain.RecoveryStrategy.Retry
 
 /**
  * Events of this type are persisted and replayed by akka PersistentFSM to restore the latest state.
