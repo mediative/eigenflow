@@ -1,6 +1,14 @@
 # Use container-based infrastructure
 sudo: false
 
+# These directories are cached at the end of the build
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt/boot/
+    - $HOME/.gitbook
+    - node_modules/
+
 language: scala
 scala: 2.11.7
 jdk: oraclejdk8
@@ -13,7 +21,6 @@ before_install:
 
 script:
   - sbt ++$TRAVIS_SCALA_VERSION reformat-code-check test
-
   # Tricks to avoid unnecessary cache updates
   - find $HOME/.sbt -name "*.lock" | xargs rm
   - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
@@ -22,14 +29,6 @@ after_success:
   - gitbook build
   - devops/deploy-site.sh
 
-# These directories are cached at the end of the build
-cache:
-  directories:
-    - $HOME/.ivy2/cache
-    - $HOME/.sbt/boot/
-    - $HOME/.gitbook
-    - node_modules/
-
 env:
   global:
-    secure: "caI9ZIrMj60pGoL048p22pQz0YjPTkabyBTcGyDYkp4krj1mEvZ01kozIwhdbJFKa30tP48LpudzEpD7J2/NxouX2jBA6FLfjKW5qCssxEMUw2R+NbHYqhsJ4DVnaJzXsdCFLo/u0DawtgYECEZAmi9ck1peh6MvEnntPFzEWYw/BiwDc1wy3+25jy4gpv0YKOsw3II+uTo8OW4V3+G6Y5+UHz5GE8Cc4oBn4MEdjXWfIRCW3mZiti27ptcF/WwYv+4r5xB1XVU4s1+xKsj1n/quamugAUYZaZR5rrA9iSfij9S36RTW/NseWPCWUapDWe/bmt9gJ3q78vkvQJhSHLU54zzAf8/s7rZVv7/zir7/OPJkiVnCz2LgLXlwOkqBTTrJMELC2UQ9BvvdNUNHVRZbwcdrVgaSCi7OLuTDcawi7t6OPg/KAC83BvItEHtC3LeXUz8bGhGO675A9cqtAWkqB+ZxPnoSxqMVqooYXQdS95K8TaDw6Qd/lNmNdDcthC7zAfK9fobReFUYJPWakFW6kPJDO0hWf1cTdNHwVymC5N5+fMZW2nbhLvi3YDU+iIchSYZFvTwCxE/VGruMPvaOy2Cu0/qqybQMkTUyk7LuXRXosy5nPP7vbrZ6htr8tEu1r+5MPxcjNQ3DtT450tdK3z58MxfWWmLuT0kN5xw="
+    secure: caI9ZIrMj60pGoL048p22pQz0YjPTkabyBTcGyDYkp4krj1mEvZ01kozIwhdbJFKa30tP48LpudzEpD7J2/NxouX2jBA6FLfjKW5qCssxEMUw2R+NbHYqhsJ4DVnaJzXsdCFLo/u0DawtgYECEZAmi9ck1peh6MvEnntPFzEWYw/BiwDc1wy3+25jy4gpv0YKOsw3II+uTo8OW4V3+G6Y5+UHz5GE8Cc4oBn4MEdjXWfIRCW3mZiti27ptcF/WwYv+4r5xB1XVU4s1+xKsj1n/quamugAUYZaZR5rrA9iSfij9S36RTW/NseWPCWUapDWe/bmt9gJ3q78vkvQJhSHLU54zzAf8/s7rZVv7/zir7/OPJkiVnCz2LgLXlwOkqBTTrJMELC2UQ9BvvdNUNHVRZbwcdrVgaSCi7OLuTDcawi7t6OPg/KAC83BvItEHtC3LeXUz8bGhGO675A9cqtAWkqB+ZxPnoSxqMVqooYXQdS95K8TaDw6Qd/lNmNdDcthC7zAfK9fobReFUYJPWakFW6kPJDO0hWf1cTdNHwVymC5N5+fMZW2nbhLvi3YDU+iIchSYZFvTwCxE/VGruMPvaOy2Cu0/qqybQMkTUyk7LuXRXosy5nPP7vbrZ6htr8tEu1r+5MPxcjNQ3DtT450tdK3z58MxfWWmLuT0kN5xw=
