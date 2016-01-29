@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Mediative
+ * Copyright 2016 Mediative
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,15 @@
 
 package com.mediative.eigenflow.dsl
 
-import com.mediative.eigenflow.domain.{ Retry, ProcessContext }
+import com.mediative.eigenflow.domain.RecoveryStrategy.Retry
 import com.mediative.eigenflow.domain.fsm.{ ExecutionPlan, ProcessStage }
+import com.mediative.eigenflow.domain.{ ProcessContext, RecoveryStrategy }
 
 import scala.concurrent.Future
 import scala.concurrent.duration.{ Duration, FiniteDuration }
 import scala.language.implicitConversions
 
-trait EigenFlowDSL {
+trait EigenflowDSL {
 
   implicit class ExecutionPlanWrapper[A, B](executionPlan: ExecutionPlan[A, B]) {
     /**
@@ -39,16 +40,16 @@ trait EigenFlowDSL {
      * @param attempts Number of retries.
      */
     def retry(interval: FiniteDuration, attempts: Int): ExecutionPlan[A, B] =
-      executionPlan.copy(retryStrategy = _ => Some(Retry(interval, attempts)))
+      executionPlan.copy(recoveryStrategy = _ => Retry(interval, attempts))
 
     /**
-     * Define advanced retry strategy with individual case per expected exception.
-     * For what is not covered by the given partial a NoRetry strategy will be applied, what means propagate exception further (JobFailed).
+     * Define recovery strategy per exception.
+     * The "NoRetry" strategy is applied for not covered exceptions, what means fail the process.
      *
      * @param f Partial function which maps exception to a retry strategy.
      */
-    def retry(f: PartialFunction[Throwable, Retry]): ExecutionPlan[A, B] =
-      executionPlan.copy(retryStrategy = t => Some((f orElse Retry.NoRetry)(t)))
+    def onFailure(f: PartialFunction[Throwable, RecoveryStrategy]): ExecutionPlan[A, B] =
+      executionPlan.copy(recoveryStrategy = t => (f orElse RecoveryStrategy.default)(t))
 
     /**
      * Publish custom data to the given topic.
@@ -60,12 +61,12 @@ trait EigenFlowDSL {
       executionPlan.copy(publishMetricsMap = Some((topic, f)))
 
     /**
-     * Define retries timeout. Makes sense only in combination with 'retry' method.
+     * Define recovery timeout. Makes sense only in combination with 'onFailure' method.
      *
-     * @param timeout Timeout after which the stage should fail if exception happend.
+     * @param timeout Timeout after which the stage fails if in recovery mode.
      */
-    def retriesTimeout(timeout: Duration): ExecutionPlan[A, B] =
-      executionPlan.copy(retriesTimeout = Some(timeout.toMillis))
+    def globalRecoveryTimeout(timeout: Duration): ExecutionPlan[A, B] =
+      executionPlan.copy(recoveryTimeout = Some(timeout.toMillis))
   }
 
   /**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Mediative
+ * Copyright 2016 Mediative
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,9 @@ import java.util.{ Date, UUID }
 import akka.actor.{ Actor, ActorLogging }
 import akka.persistence.fsm.PersistentFSM
 import com.mediative.eigenflow.StagedProcess
+import com.mediative.eigenflow.domain.RecoveryStrategy.{ Fail, Retry }
 import com.mediative.eigenflow.domain.fsm._
-import com.mediative.eigenflow.domain.{ ProcessContext, Retry, RetryRegistry }
+import com.mediative.eigenflow.domain.{ RecoveryStrategy, ProcessContext, RetryRegistry }
 import com.mediative.eigenflow.environment.ProcessConfiguration
 import com.mediative.eigenflow.process.ProcessFSM.{ CompleteExecution, Continue, FailExecution }
 import com.mediative.eigenflow.process.ProcessManager.{ ProcessComplete, ProcessFailed }
@@ -191,16 +192,17 @@ class ProcessFSM(process: StagedProcess, processingDate: Date)(implicit override
       case Event(CompleteExecution(message), _) =>
         moveTo(nextStage, message)
       case Event(FailExecution(failure), processContext) =>
-        plan.retryStrategy(failure).fold {
-          // no recovery plan for this stage, fail the process
-          failProcess(failure)
-        } { retry =>
-          // stage has a recovery plan, check if it's valid for next retry then retry or fail
-          if (RetryRegistry.isValidForNextRetry(processContext.retryRegistry, failure)) {
-            retryStage(failure, retry, plan.retriesTimeout)
-          } else {
+        plan.recoveryStrategy(failure) match {
+          case retry @ Retry(_, _) => // stage has a recovery plan, check if it's valid for next retry then retry or fail
+            if (RetryRegistry.isValidForNextRetry(processContext.retryRegistry, failure)) {
+              retryStage(failure, retry, plan.recoveryTimeout)
+            } else {
+              failProcess(failure)
+            }
+          case RecoveryStrategy.Complete => // skip this instance and move on (mark as complete)
+            moveTo(Complete, s"forced to complete by recovery strategy. failure: ${failure.getMessage}")
+          case Fail => // no recovery plan for this stage, fail the process
             failProcess(failure)
-          }
         }
     }
 

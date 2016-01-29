@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Mediative
+ * Copyright 2016 Mediative
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,13 @@ package com.mediative.eigenflow
 import java.util.Date
 
 import com.mediative.eigenflow.domain.fsm.ExecutionPlan
-import com.mediative.eigenflow.dsl.EigenFlowDSL
+import com.mediative.eigenflow.dsl.EigenflowDSL
 
 /**
  * The main trait which allows to define the execution stages.
  *
  */
-trait StagedProcess extends EigenFlowDSL {
+trait StagedProcess extends EigenflowDSL {
   def executionPlan: ExecutionPlan[_, _]
 
   def initialProcessingDate: Date = new Date()
