@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.mediative.eigenflow.test.it.helper
+package com.mediative.eigenflow.test.it.utils.wrappers
 
 import java.util.Date
 
@@ -32,11 +32,11 @@ object TracedProcessFSM {
     override def publish(topic: String, message: String): Unit = () // ignore
   }
 
-  def props(process: StagedProcess, date: Date) = Props(new TracedProcessFSM(process, date))
+  def props(process: StagedProcess, date: Date, reset: Boolean = false) = Props(new TracedProcessFSM(process, date, reset))
 
   case object Start
 
-  class TracedProcessFSM(process: StagedProcess, date: Date) extends ProcessFSM(process, date) {
+  class TracedProcessFSM(process: StagedProcess, date: Date, reset: Boolean) extends ProcessFSM(process, date, reset) {
     private var originalSender = sender
     private var stagesRegistry: Seq[ProcessStage] = Seq.empty
 
@@ -47,7 +47,13 @@ object TracedProcessFSM {
     }
 
     override def applyEvent(domainEvent: ProcessEvent, processContext: ProcessContext): ProcessContext = {
-      stagesRegistry = stagesRegistry.:+(stateName) // register the last state just before switching it
+      // register the last stage just before switching it, but only for the current run.
+      // if this actor is restored form a previous run, the history recovery will not be registered,
+      // it allows to reason about stages within one run context.
+      // if a need for the full history arises then another registry should be created.
+      if (!recoveryRunning) {
+        stagesRegistry = stagesRegistry.:+(stateName)
+      }
       super.applyEvent(domainEvent, processContext)
     }
 

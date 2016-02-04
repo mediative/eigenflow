@@ -16,16 +16,14 @@
 
 package com.mediative.eigenflow
 
-import java.io.IOException
 import java.util.{ Date, UUID }
 
 import com.mediative.eigenflow.domain.ProcessContext
-import com.mediative.eigenflow.domain.RecoveryStrategy.{ Retry, Complete }
+import com.mediative.eigenflow.domain.RecoveryStrategy.Complete
 import com.mediative.eigenflow.domain.fsm.{ ExecutionPlan, Initial, ProcessStage }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-
 import scala.concurrent.duration._
 
 package object test {
@@ -100,6 +98,31 @@ package object test {
     }
 
     val b = Stage2 { _: String =>
+      stringFunction
+    }
+
+    override def executionPlan: ExecutionPlan[_, _] = a ~> b
+
+    override def nextProcessingDate(lastCompleted: Date): Date = new Date()
+  }
+
+  val `Stage1 ~> Stage2(FailOnce) ~> Stage3` = new StagedProcess {
+    val a = Stage1 withContext { ctx: ProcessContext =>
+      stringFunction
+    } onFailure {
+      case _: Throwable => Complete
+    }
+
+    val b = Stage2 withContext { ctx: ProcessContext =>
+      { _: String =>
+        if (ctx.failure.isEmpty) {
+          throw new RuntimeException
+        }
+        stringFunction
+      }
+    }
+
+    val c = Stage3 { _: String =>
       stringFunction
     }
 

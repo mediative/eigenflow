@@ -12,7 +12,7 @@ before_install:
   - gitbook install
 
 script:
-  - sbt ++$TRAVIS_SCALA_VERSION reformat-code-check test
+  - sbt ++$TRAVIS_SCALA_VERSION reformat-code-check test it:test
 
   # Tricks to avoid unnecessary cache updates
   - find $HOME/.sbt -name "*.lock" | xargs rm

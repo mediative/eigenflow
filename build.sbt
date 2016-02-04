@@ -26,7 +26,9 @@ libraryDependencies ++= Seq(
   // test libraries
   "org.scalatest" %% "scalatest" % "2.2.6" % "test",
   "org.scalacheck" %% "scalacheck" % "1.12.5" % "test",
-  "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test"
+  "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test",
+  "com.typesafe.akka" %% "akka-slf4j" % akkaVersion % "test",
+  "ch.qos.logback" % "logback-classic" % "1.1.3" % "test"
 )
 
 enablePlugins(MediativeReleasePlugin, MediativeBintrayPlugin)

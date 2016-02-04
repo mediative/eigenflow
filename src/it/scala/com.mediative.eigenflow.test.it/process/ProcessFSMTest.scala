@@ -19,25 +19,14 @@ package it.process
 
 import java.util.Date
 
-import akka.actor.ActorSystem
-import akka.testkit.{ ImplicitSender, TestKit }
-import com.mediative.eigenflow.domain.fsm.{ Retrying, Complete, Initial, ProcessStage }
-import com.mediative.eigenflow.dsl.EigenflowDSL
-import com.mediative.eigenflow.test.it.helper.TracedProcessFSM
-import com.mediative.eigenflow.test.it.helper.TracedProcessFSM.Start
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{ BeforeAndAfterAll, FreeSpecLike, Matchers }
+import com.mediative.eigenflow.domain.fsm._
+import com.mediative.eigenflow.test.it.utils.wrappers.TracedProcessFSM
+import TracedProcessFSM.Start
+import com.mediative.eigenflow.test.it.utils.EigenflowIntegrationTest
 
 import scala.concurrent.duration._
 
-class ProcessFSMTest(_system: ActorSystem)
-    extends TestKit(_system) with ImplicitSender
-    with FreeSpecLike with ScalaFutures with GeneratorDrivenPropertyChecks with Matchers with BeforeAndAfterAll
-    with EigenflowDSL {
-
-  def this() = this(ActorSystem("EigenflowTestActorSystem"))
-
+class ProcessFSMTest extends EigenflowIntegrationTest {
   "ProcessFSM" - {
     "for Stage1 ~> Stage2" - {
       "expect transition: Initial -> Stage1 -> Stage2 -> Complete" in {
@@ -74,8 +63,55 @@ class ProcessFSMTest(_system: ActorSystem)
         assert(result == Seq(Initial, Stage1, Complete))
       }
     }
-  }
-  override def afterAll: Unit = {
-    TestKit.shutdownActorSystem(system)
+
+    "for Stage1 ~> Stage2(FailOnce) ~> Stage3" - {
+      "expect transition: Initial -> Stage1 -> Stage2 -> Failed" in {
+        system.actorOf(
+          TracedProcessFSM.props(`Stage1 ~> Stage2(FailOnce) ~> Stage3`, new Date)
+        ) ! Start
+
+        val result = expectMsgType[Seq[ProcessStage]](5.seconds)
+
+        assert(result == Seq(Initial, Stage1, Stage2, Failed))
+      }
+
+      "expect restart from the failed stage" in {
+        val date = new Date
+        system.actorOf(
+          TracedProcessFSM.props(`Stage1 ~> Stage2(FailOnce) ~> Stage3`, date)
+        ) ! Start
+
+        val result = expectMsgType[Seq[ProcessStage]](5.seconds)
+
+        assert(result == Seq(Initial, Stage1, Stage2, Failed))
+
+        system.actorOf(
+          TracedProcessFSM.props(`Stage1 ~> Stage2(FailOnce) ~> Stage3`, date)
+        ) ! Start
+
+        val result2 = expectMsgType[Seq[ProcessStage]](5.seconds)
+
+        assert(result2 == Seq(Failed, Stage2, Complete))
+      }
+
+      "start over again if forced" in {
+        val date = new Date
+        system.actorOf(
+          TracedProcessFSM.props(`Stage1 ~> Stage2(FailOnce) ~> Stage3`, date)
+        ) ! Start
+
+        val result = expectMsgType[Seq[ProcessStage]](5.seconds)
+
+        assert(result == Seq(Initial, Stage1, Stage2, Failed))
+
+        system.actorOf(
+          TracedProcessFSM.props(`Stage1 ~> Stage2(FailOnce) ~> Stage3`, date, reset = true)
+        ) ! Start
+
+        val result2 = expectMsgType[Seq[ProcessStage]](5.seconds)
+
+        assert(result2 == Seq(Initial, Stage1, Stage2, Failed))
+      }
+    }
   }
 }

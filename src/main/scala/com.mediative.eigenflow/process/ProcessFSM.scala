@@ -16,14 +16,14 @@
 
 package com.mediative.eigenflow.process
 
-import java.util.{ Date, UUID }
+import java.util.Date
 
 import akka.actor.{ Actor, ActorLogging }
 import akka.persistence.fsm.PersistentFSM
 import com.mediative.eigenflow.StagedProcess
 import com.mediative.eigenflow.domain.RecoveryStrategy.{ Fail, Retry }
 import com.mediative.eigenflow.domain.fsm._
-import com.mediative.eigenflow.domain.{ RecoveryStrategy, ProcessContext, RetryRegistry }
+import com.mediative.eigenflow.domain.{ ProcessContext, RecoveryStrategy, RetryRegistry }
 import com.mediative.eigenflow.environment.ProcessConfiguration
 import com.mediative.eigenflow.process.ProcessFSM.{ CompleteExecution, Continue, FailExecution }
 import com.mediative.eigenflow.process.ProcessManager.{ ProcessComplete, ProcessFailed }
@@ -40,8 +40,15 @@ import scala.util.{ Failure, Success }
  * and start from the failed stage.
  * The processingDate parameter is used to restore a process from the previous stage.
  *
+ * @param process Process definition.
+ * @param processingDate Date the current run applies to.
+ * @param reset When reset is true the run is forced to start from the Initial stage no matter in what stage it was before.
+ *
  */
-class ProcessFSM(process: StagedProcess, processingDate: Date)(implicit override val domainEventClassTag: ClassTag[ProcessEvent], override val publisher: MessagingSystem)
+private[eigenflow] class ProcessFSM(process: StagedProcess,
+  processingDate: Date,
+  reset: Boolean = false)(implicit override val domainEventClassTag: ClassTag[ProcessEvent],
+    override val publisher: MessagingSystem)
     extends Actor with PersistentFSM[ProcessStage, ProcessContext, ProcessEvent] with ProcessPublisher with ActorLogging {
   private val processTypeId = ProcessConfiguration.load.id
 
@@ -122,8 +129,9 @@ class ProcessFSM(process: StagedProcess, processingDate: Date)(implicit override
           updateRetryRegistryWith(registeredFailure)
 
       case StageFailed(failure) =>
-        if (!recoveryRunning) log.error(s"Process failed on stage $currentStage. Caused by: $failure")
-        if (!recoveryRunning) failure.printStackTrace()
+        if (!recoveryRunning) {
+          log.error(failure, s"Process failed on stage $currentStage. Caused by: $failure")
+        }
 
         publishStageFailed(processContext, failure)
         publishProcessFailed(processContext, failure)
@@ -136,14 +144,7 @@ class ProcessFSM(process: StagedProcess, processingDate: Date)(implicit override
   //
   // Transition logic from the given stage.
   //
-  startWith(Initial, ProcessContext(
-    timestamp = System.currentTimeMillis(),
-    processingDate = processingDate,
-    processId = UUID.randomUUID().toString,
-    startTime = System.currentTimeMillis(),
-    stage = Initial,
-    message = ""
-  ))
+  startWith(Initial, ProcessContext.default(processingDate))
 
   when(Initial) {
     case Event(Continue, _) =>
@@ -164,6 +165,13 @@ class ProcessFSM(process: StagedProcess, processingDate: Date)(implicit override
   when(Failed) {
     case Event(Continue, processContext) =>
       moveTo(processContext.stage, processContext.message)
+  }
+
+  override def onRecoveryCompleted(): Unit = {
+    if (reset) {
+      startWith(Initial, ProcessContext.default(processingDate))
+    }
+    super.onRecoveryCompleted()
   }
 
   /**
@@ -217,7 +225,10 @@ class ProcessFSM(process: StagedProcess, processingDate: Date)(implicit override
   }
 
   private def failProcess(failure: Throwable) = {
-    goto(Failed) applying StageFailed(failure) andThen (_ => context.parent ! ProcessFailed)
+    goto(Failed) applying StageFailed(failure) andThen (_ => {
+      context.parent ! ProcessFailed
+      context.stop(self)
+    })
   }
 
   private def retryStage(failure: Throwable, retry: Retry, timeout: Option[Long]) = {
@@ -230,7 +241,7 @@ class ProcessFSM(process: StagedProcess, processingDate: Date)(implicit override
 
       val nextRetry = FiniteDuration((nextRetryTime - now) / 1000, SECONDS)
       context.system.scheduler.scheduleOnce(nextRetry, self, Continue)
-      log.debug(s"stage retry scheduled in ${nextRetry} seconds")
+      log.debug(s"stage retry scheduled in $nextRetry seconds")
     }
   }
 
