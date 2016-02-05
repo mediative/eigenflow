@@ -5,5 +5,6 @@
 - [Time Management](doc/time-management.md)
 - [Recovery](doc/recovery.md)
 - [Error Handling](doc/error-handling.md)
+- [Messaging](doc/messaging.md)
 - [DevOps](devops/README.md)
 - [Contributing](CONTRIBUTING.md)
