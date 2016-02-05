@@ -26,6 +26,10 @@ object DateHelper {
   val DateFormat = new SimpleDateFormat("yyyy-MM-dd")
   val TimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
 
+  SimpleDateFormat.setLenient(false)
+  DateFormat.setLenient(false)
+  TimeFormat.setLenient(false)
+
   def parse(string: String): Option[Date] = {
     try {
       Some(
@@ -39,7 +43,7 @@ object DateHelper {
           SimpleDateFormat.parse(string)
         })
     } catch {
-      case e: ParseException => None
+      case e: Throwable => None
     }
   }
 }

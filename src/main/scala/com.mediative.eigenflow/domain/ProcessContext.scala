@@ -16,9 +16,9 @@
 
 package com.mediative.eigenflow.domain
 
-import java.util.Date
+import java.util.{ UUID, Date }
 
-import com.mediative.eigenflow.domain.fsm.ProcessStage
+import com.mediative.eigenflow.domain.fsm.{ Initial, ProcessStage }
 
 /**
  * A set of basic attributes which help to maintain stage transitions logic
@@ -53,3 +53,14 @@ case class ProcessContext(timestamp: Long = System.currentTimeMillis(),
   failure: Option[Throwable] = None,
   retryRegistry: Option[RetryRegistry] = None,
   message: String)
+
+object ProcessContext {
+  def default(processingDate: Date) = ProcessContext(
+    timestamp = System.currentTimeMillis(),
+    processingDate = processingDate,
+    processId = UUID.randomUUID().toString,
+    startTime = System.currentTimeMillis(),
+    stage = Initial,
+    message = ""
+  )
+}
