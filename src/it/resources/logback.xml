@@ -1,0 +1,11 @@
+<configuration>
+    <logger name="com.mediative" level="OFF"/>
+
+    <root level="ERROR">
+        <appender class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>[%level] [%d{ISO8601}] %m%n</pattern>
+            </encoder>
+        </appender>
+    </root>
+</configuration>

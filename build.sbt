@@ -17,7 +17,7 @@ libraryDependencies ++= Seq(
   "com.github.krasserm" %% "akka-persistence-cassandra" % "0.6",
 
   // kafka
-  "org.apache.kafka" %% "kafka" % kafkaVersion,
+  "org.apache.kafka" %% "kafka" % kafkaVersion exclude("log4j", "log4j") exclude("org.slf4j","slf4j-log4j12"),
   "org.apache.kafka" % "kafka-clients" % kafkaVersion,
 
   // json
