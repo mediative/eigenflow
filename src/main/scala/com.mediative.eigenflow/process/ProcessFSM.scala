@@ -57,8 +57,7 @@ private[eigenflow] class ProcessFSM(process: StagedProcess,
   // otherwise persistence wouldn't be able to restore the state.
   override def persistenceId: String = s"$processTypeId-${processingDate.getTime}"
 
-  // used as the main topic and prefix for sub topics (stages, metrics) for the messaging system (kafka)
-  override def baseTopic = processTypeId
+  override def jobId = processTypeId
 
   // don't publish messages during recovery!
   override def publishingActive = !recoveryRunning
@@ -184,10 +183,7 @@ private[eigenflow] class ProcessFSM(process: StagedProcess,
         try {
           plan.f(processContext)(plan.from(processContext.message)).onComplete {
             case Success(result) =>
-              plan.publishMetricsMap.foreach {
-                case (topic, toMap) =>
-                  publishMetrics(topic, processContext, toMap(result))
-              }
+              plan.publishMetricsMap.foreach(toMap => publishMetrics(processContext, toMap(result)))
               self ! CompleteExecution(plan.to(result))
             case Failure(failure: Throwable) =>
               self ! FailExecution(failure)

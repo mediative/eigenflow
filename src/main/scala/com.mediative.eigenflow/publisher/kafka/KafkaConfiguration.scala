@@ -32,7 +32,8 @@ object KafkaConfiguration {
       "linger.ms",
       "buffer.memory",
       "key.serializer",
-      "value.serializer")
+      "value.serializer",
+      "topic.prefix")
 
     val properties = new Properties()
     propertiesKeys.foreach(key => properties.setProperty(key, config.getString(s"eigenflow.kafka.${key}")))

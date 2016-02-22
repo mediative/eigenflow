@@ -54,11 +54,10 @@ trait EigenflowDSL {
     /**
      * Publish custom data to the given topic.
      *
-     * @param topic Topic to publish messages to.
      * @param f Function to build a key map value from the stage execution result.
      */
-    def publishMetrics(topic: String, f: B => Map[String, Double]): ExecutionPlan[A, B] =
-      executionPlan.copy(publishMetricsMap = Some((topic, f)))
+    def publishMetrics(f: B => Map[String, Double]): ExecutionPlan[A, B] =
+      executionPlan.copy(publishMetricsMap = Some(f))
 
     /**
      * Define recovery timeout. Makes sense only in combination with 'onFailure' method.

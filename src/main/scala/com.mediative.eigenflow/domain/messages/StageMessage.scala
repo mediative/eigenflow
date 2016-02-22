@@ -27,7 +27,9 @@ package com.mediative.eigenflow.domain.messages
  *                 Initial state's duration should be 0.
  * @param message Data passed between stages.
  */
-case class StageMessage(timestamp: Long,
+case class StageMessage(
+  timestamp: Long,
+  jobId: String,
   processId: String,
   stage: String,
   state: String,
