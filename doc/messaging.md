@@ -26,7 +26,7 @@ For example:
 ```scala
 val stage = Stage {
   Future { ... }
-} publishMetrics("statistics", _ => Map("total" -> 1.0))
+} publishMetrics(_ => Map("total" -> 1.0))
 ```
 
 In this case a message with process, stage and metrics information will be published to `process_id-statistics` topic.
@@ -62,6 +62,7 @@ eigenflow {
 
   kafka {
     bootstrap.servers = "..."
+    topic.prefix = "..." // Optional. The Default value is "eigenflow".
   }
 }
 ```

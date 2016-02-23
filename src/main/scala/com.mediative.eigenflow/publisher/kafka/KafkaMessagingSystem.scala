@@ -21,15 +21,19 @@ import com.mediative.eigenflow.publisher.MessagingSystem
 import org.apache.kafka.clients.producer.{ Callback, KafkaProducer, ProducerRecord, RecordMetadata }
 
 class KafkaMessagingSystem(log: LoggingAdapter) extends MessagingSystem {
-  private val producer = new KafkaProducer[String, String](KafkaConfiguration.properties)
+  private val config = KafkaConfiguration.properties()
+  private val producer = new KafkaProducer[String, String](config)
+  private val topicPrefix = config.getProperty("topic.prefix")
 
   override def publish(topic: String, message: String): Unit = {
-    log.info(s"Publishing to $topic :\n$message\n")
+    val topicName = s"$topicPrefix-$topic"
 
-    producer.send(new ProducerRecord[String, String](topic, message), new Callback {
+    log.info(s"Publishing to $topicName :\n$message\n")
+
+    producer.send(new ProducerRecord[String, String](topicName, message), new Callback {
       override def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
         if (exception != null) {
-          log.error(s"Cannot publish to $topic. Caused by: ${exception.getMessage}", exception)
+          log.error(s"Cannot publish to $topicName. Caused by: ${exception.getMessage}", exception)
         }
       }
     })

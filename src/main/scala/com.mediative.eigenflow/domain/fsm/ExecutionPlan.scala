@@ -55,4 +55,4 @@ case class ExecutionPlan[A, B](
   from: String => A, to: B => String,
   recoveryStrategy: Throwable => RecoveryStrategy = RecoveryStrategy.default, recoveryTimeout: Option[Long] = None,
   previous: Option[ExecutionPlan[_, A]] = None,
-  publishMetricsMap: Option[(String, B => Map[String, Double])] = None)
+  publishMetricsMap: Option[B => Map[String, Double]] = None)

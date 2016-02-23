@@ -22,4 +22,9 @@ package com.mediative.eigenflow.domain.messages
  *
  * @see GenericMessage
  */
-case class MetricsMessage(timestamp: Long, processId: String, stage: String, message: Map[String, Double])
+case class MetricsMessage(
+  timestamp: Long,
+  jobId: String,
+  processId: String,
+  stage: String,
+  message: Map[String, Double])

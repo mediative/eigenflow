@@ -29,7 +29,7 @@ import scala.language.implicitConversions
 trait ProcessPublisher {
   def publisher: MessagingSystem
 
-  def baseTopic: String
+  def jobId: String
 
   // this method is used to forbid publishing during stage recovery to avoid publishing of duplicates or false events.
   def publishingActive: Boolean = true
@@ -38,6 +38,7 @@ trait ProcessPublisher {
   def publishProcessStarting(context: ProcessContext): Unit = {
     publishProcessMessage(ProcessMessage(
       timestamp = System.currentTimeMillis(),
+      jobId = jobId,
       processId = context.processId,
       processingDate = context.processingDate,
       state = Processing,
@@ -51,6 +52,7 @@ trait ProcessPublisher {
     val now = System.currentTimeMillis()
     publishProcessMessage(ProcessMessage(
       timestamp = now,
+      jobId = jobId,
       processId = context.processId,
       processingDate = context.processingDate,
       state = Complete,
@@ -62,6 +64,7 @@ trait ProcessPublisher {
   def publishProcessFailed(context: ProcessContext, failure: Throwable): Unit = {
     publishProcessMessage(ProcessMessage(
       timestamp = System.currentTimeMillis(),
+      jobId = jobId,
       processId = context.processId,
       processingDate = context.processingDate,
       state = Failed,
@@ -73,6 +76,7 @@ trait ProcessPublisher {
   def publishStageStarting(processId: String, stageWillStart: ProcessStage, message: String): Unit = {
     publishStageMessage(StageMessage(
       timestamp = System.currentTimeMillis(),
+      jobId = jobId,
       processId = processId,
       stage = stageWillStart,
       state = Processing,
@@ -85,6 +89,7 @@ trait ProcessPublisher {
     val now = System.currentTimeMillis()
     publishStageMessage(StageMessage(
       timestamp = now,
+      jobId = jobId,
       processId = context.processId,
       stage = context.stage,
       state = Complete,
@@ -96,6 +101,7 @@ trait ProcessPublisher {
   def publishStageRetrying(context: ProcessContext): Unit = {
     publishStageMessage(StageMessage(
       timestamp = System.currentTimeMillis(),
+      jobId = jobId,
       processId = context.processId,
       stage = context.stage,
       state = Retrying,
@@ -107,6 +113,7 @@ trait ProcessPublisher {
   def publishStageFailed(context: ProcessContext, failure: Throwable): Unit = {
     publishStageMessage(StageMessage(
       timestamp = System.currentTimeMillis(),
+      jobId = jobId,
       processId = context.processId,
       stage = context.stage,
       state = Failed,
@@ -115,9 +122,10 @@ trait ProcessPublisher {
     ))
   }
 
-  def publishMetrics(topic: String, context: ProcessContext, message: Map[String, Double]): Unit = {
-    publishMetricsMessage(topic, MetricsMessage(
+  def publishMetrics(context: ProcessContext, message: Map[String, Double]): Unit = {
+    publishMetricsMessage(MetricsMessage(
       timestamp = System.currentTimeMillis(),
+      jobId = jobId,
       processId = context.processId,
       stage = context.stage,
       message = message
@@ -127,19 +135,19 @@ trait ProcessPublisher {
   // low level helper functions
   private def publishProcessMessage(message: ProcessMessage): Unit = {
     if (publishingActive) {
-      publisher.publish(baseTopic, message)
+      publisher.publish("jobs", message)
     }
   }
 
   private def publishStageMessage(message: StageMessage): Unit = {
     if (publishingActive) {
-      publisher.publish(s"$baseTopic-stages", message)
+      publisher.publish("stages", message)
     }
   }
 
-  private def publishMetricsMessage(topic: String, message: MetricsMessage): Unit = {
+  private def publishMetricsMessage(message: MetricsMessage): Unit = {
     if (publishingActive) {
-      publisher.publish(s"$baseTopic-$topic", message)
+      publisher.publish("metrics", message)
     }
   }
 

@@ -20,6 +20,7 @@ package com.mediative.eigenflow.domain.messages
  * Message for process state changes.
  *
  * @param timestamp Time when the message was created.
+ * @param jobId Job identifier
  * @param processId Process identification.
  * @param processingDate Processing date of the process.
  * @param state Process state.
@@ -31,6 +32,7 @@ package com.mediative.eigenflow.domain.messages
  */
 case class ProcessMessage(
   timestamp: Long,
+  jobId: String,
   processId: String,
   processingDate: String,
   state: String,
