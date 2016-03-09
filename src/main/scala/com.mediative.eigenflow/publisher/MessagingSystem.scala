@@ -16,7 +16,9 @@
 
 package com.mediative.eigenflow.publisher
 
+import akka.event.LoggingAdapter
+
 trait MessagingSystem {
-  def publish(topic: String, message: String): Unit
+  def publish(topic: String, message: String)(implicit log: LoggingAdapter): Unit
   def stop(): Unit = ()
 }

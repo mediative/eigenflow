@@ -19,6 +19,7 @@ package com.mediative.eigenflow.test.it.utils.wrappers
 import java.util.Date
 
 import akka.actor.Props
+import akka.event.LoggingAdapter
 import com.mediative.eigenflow.StagedProcess
 import com.mediative.eigenflow.domain.ProcessContext
 import com.mediative.eigenflow.domain.fsm.{ ProcessEvent, ProcessStage }
@@ -29,7 +30,7 @@ import com.mediative.eigenflow.publisher.MessagingSystem
 object TracedProcessFSM {
 
   implicit def messagingSystem = new MessagingSystem {
-    override def publish(topic: String, message: String): Unit = () // ignore
+    override def publish(topic: String, message: String)(implicit log: LoggingAdapter): Unit = () // ignore
   }
 
   def props(process: StagedProcess, date: Date, reset: Boolean = false) = Props(new TracedProcessFSM(process, date, reset))

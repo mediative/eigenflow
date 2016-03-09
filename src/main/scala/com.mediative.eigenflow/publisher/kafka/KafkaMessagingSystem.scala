@@ -20,12 +20,12 @@ import akka.event.LoggingAdapter
 import com.mediative.eigenflow.publisher.MessagingSystem
 import org.apache.kafka.clients.producer.{ Callback, KafkaProducer, ProducerRecord, RecordMetadata }
 
-class KafkaMessagingSystem(log: LoggingAdapter) extends MessagingSystem {
+class KafkaMessagingSystem extends MessagingSystem {
   private val config = KafkaConfiguration.properties()
   private val producer = new KafkaProducer[String, String](config)
   private val topicPrefix = config.getProperty("topic.prefix")
 
-  override def publish(topic: String, message: String): Unit = {
+  override def publish(topic: String, message: String)(implicit log: LoggingAdapter): Unit = {
     val topicName = s"$topicPrefix-$topic"
 
     log.info(s"Publishing to $topicName :\n$message\n")

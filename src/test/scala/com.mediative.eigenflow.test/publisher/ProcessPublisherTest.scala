@@ -2,11 +2,13 @@ package com.mediative.eigenflow.test.publisher
 
 import java.util.Date
 
+import akka.event.LoggingAdapter
 import com.mediative.eigenflow.domain.ProcessContext
 import com.mediative.eigenflow.domain.messages._
 import com.mediative.eigenflow.helpers.DateHelper._
 import com.mediative.eigenflow.publisher.{ MessagingSystem, ProcessPublisher }
 import org.scalatest.FreeSpec
+import org.scalatest.mock.MockitoSugar
 import upickle.default._
 
 import scala.collection.mutable
@@ -20,12 +22,25 @@ class ProcessPublisherTest extends FreeSpec {
     val mockMessagingSystem = new MessagingSystem {
       val publishedMessages = mutable.ArrayBuffer[(String, String)]()
 
-      override def publish(topic: String, message: String): Unit = {
+      override def publish(topic: String, message: String)(implicit log: LoggingAdapter): Unit = {
         publishedMessages.append(topic -> message)
       }
     }
 
+    val mockLog = new LoggingAdapter {
+      override protected def notifyInfo(message: String): Unit = {}
+      override def isErrorEnabled: Boolean = false
+      override def isInfoEnabled: Boolean = false
+      override def isDebugEnabled: Boolean = false
+      override protected def notifyError(message: String): Unit = {}
+      override protected def notifyError(cause: Throwable, message: String): Unit = {}
+      override def isWarningEnabled: Boolean = false
+      override protected def notifyWarning(message: String): Unit = {}
+      override protected def notifyDebug(message: String): Unit = {}
+    }
+
     val publisher = new ProcessPublisher {
+      val log = mockLog
       override def jobId: String = "TestJob"
 
       override def publisher: MessagingSystem = mockMessagingSystem

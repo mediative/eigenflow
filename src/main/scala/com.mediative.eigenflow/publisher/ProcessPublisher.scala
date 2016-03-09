@@ -18,6 +18,7 @@ package com.mediative.eigenflow.publisher
 
 import java.util.Date
 
+import akka.event.LoggingAdapter
 import com.mediative.eigenflow.domain.ProcessContext
 import com.mediative.eigenflow.domain.fsm.ProcessStage
 import com.mediative.eigenflow.domain.messages._
@@ -27,6 +28,8 @@ import upickle.default._
 import scala.language.implicitConversions
 
 trait ProcessPublisher {
+  implicit def log: LoggingAdapter
+
   def publisher: MessagingSystem
 
   def jobId: String
