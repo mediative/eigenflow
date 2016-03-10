@@ -38,13 +38,13 @@ trait EigenflowBootstrap {
   def process: StagedProcess
 
   // bootstrap the system: initialize akka, message publisher ...
-  implicit val messagingSystem = Class.forName(ConfigurationLoader.config.getString("eigenflow.messaging")).asInstanceOf[MessagingSystem]
-
-  // initialize actor system after messaging system (fix for Issue #29)
-  implicit val system = ActorSystem("DataFlow", ConfigurationLoader.config)
+  implicit val messagingSystem = Class.forName(ConfigurationLoader.config.getString("eigenflow.messaging")).getConstructor().newInstance().asInstanceOf[MessagingSystem]
 
   // load environment variables
   private val startDate = Option(System.getenv("start")).flatMap(parse)
+
+  // initialize actor system as late as possible (fix for Issue #29)
+  implicit val system = ActorSystem("DataFlow", ConfigurationLoader.config)
 
   // create main actor and tell to proceed.
   system.actorOf(Props(new ProcessManager(process, startDate, stopSystem _))) ! Continue
