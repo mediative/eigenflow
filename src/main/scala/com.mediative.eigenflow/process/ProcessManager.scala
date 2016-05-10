@@ -18,7 +18,8 @@ package com.mediative.eigenflow.process
 
 import java.util.Date
 
-import akka.actor.{ ActorLogging, Props }
+import akka.actor.SupervisorStrategy.Escalate
+import akka.actor.{ ActorLogging, OneForOneStrategy, Props, SupervisorStrategy }
 import akka.persistence.PersistentActor
 import com.mediative.eigenflow.StagedProcess
 import com.mediative.eigenflow.environment.ProcessConfiguration
@@ -45,11 +46,21 @@ private[eigenflow] object ProcessManager {
  * The process parent actor which creates FSM actors which actually run processes based on processingDate.
  *
  */
-private[eigenflow] class ProcessManager(process: StagedProcess, startDate: Option[Date], onTermination: Int => Unit)(implicit val messagingSystem: MessagingSystem) extends PersistentActor with ActorLogging {
+private[eigenflow] class ProcessManager(process: StagedProcess, startDate: Option[Date])(implicit val messagingSystem: MessagingSystem) extends PersistentActor with ActorLogging {
 
   import com.mediative.eigenflow.process.ProcessManager._
 
   private val config = ProcessConfiguration.load
+
+  override def supervisorStrategy: SupervisorStrategy = {
+    OneForOneStrategy() {
+      case t => Escalate
+    }
+  }
+
+  override protected def onRecoveryFailure(cause: Throwable, event: Option[Any]): Unit = fail
+
+  override protected def onPersistFailure(cause: Throwable, event: Any, seqNr: Long): Unit = fail
 
   override def persistenceId: String = s"${config.id}-manager"
 
@@ -78,7 +89,7 @@ private[eigenflow] class ProcessManager(process: StagedProcess, startDate: Optio
         }
       } else {
         log.info(s"The process is idle until: ${TimeFormat.format(processingDate)}")
-        terminateWith(SuccessCode)
+        done
       }
   }
 
@@ -92,11 +103,9 @@ private[eigenflow] class ProcessManager(process: StagedProcess, startDate: Optio
       }
 
     case ProcessFailed =>
-      terminateWith(FailureCode)
+      fail
   }
 
-  private def terminateWith(code: Int) = {
-    context.stop(self)
-    onTermination(code)
-  }
+  private def fail() = context.parent ! ProcessSupervisor.Failed
+  private def done() = context.parent ! ProcessSupervisor.Done
 }

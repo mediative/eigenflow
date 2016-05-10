@@ -22,7 +22,7 @@ object TracedProcessManager {
   class TracedProcessManager(process: StagedProcess,
       date: Option[Date],
       receiver: ActorRef,
-      id: Option[String] = None) extends ProcessManager(process, date, _ => ()) {
+      id: Option[String] = None) extends ProcessManager(process, date) {
 
     override def persistenceId: String = id.getOrElse(super.persistenceId)
 

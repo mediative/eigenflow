@@ -7,7 +7,7 @@ Jvm.`1.8`.required
 // Dependencies
 resolvers += Resolver.bintrayRepo("krasserm", "maven")
 
-val akkaVersion = "2.4.1"
+val akkaVersion = "2.4.4"
 val kafkaVersion = "0.9.0.0"
 
 libraryDependencies ++= Seq(
