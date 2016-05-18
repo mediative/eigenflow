@@ -16,16 +16,15 @@
 
 package com.mediative.eigenflow
 
-import akka.actor.{ Props, ActorSystem }
-import akka.event.LoggingAdapter
+import akka.actor.ActorSystem
 import com.mediative.eigenflow.environment.ConfigurationLoader
 import com.mediative.eigenflow.helpers.DateHelper._
-import com.mediative.eigenflow.process.ProcessManager
 import com.mediative.eigenflow.process.ProcessManager.Continue
+import com.mediative.eigenflow.process.ProcessSupervisor
 import com.mediative.eigenflow.publisher.MessagingSystem
 
+import scala.util.{ Failure, Success, Try }
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{ Failure, Success }
 
 /**
  * Creates the actor system and start processing.
@@ -38,7 +37,8 @@ trait EigenflowBootstrap {
   def process: StagedProcess
 
   // bootstrap the system: initialize akka, message publisher ...
-  implicit val messagingSystem = Class.forName(ConfigurationLoader.config.getString("eigenflow.messaging")).getConstructor().newInstance().asInstanceOf[MessagingSystem]
+  implicit val messagingSystem = Class.forName(ConfigurationLoader.config.getString("eigenflow.messaging")).
+    getConstructor().newInstance().asInstanceOf[MessagingSystem]
 
   // load environment variables
   private val startDate = Option(System.getenv("start")).flatMap(parse)
@@ -47,13 +47,13 @@ trait EigenflowBootstrap {
   implicit val system = ActorSystem("DataFlow", ConfigurationLoader.config)
 
   // create main actor and tell to proceed.
-  system.actorOf(Props(new ProcessManager(process, startDate, stopSystem _))) ! Continue
+  system.actorOf(ProcessSupervisor.props(process, startDate, stopSystem(system))) ! Continue
 
   /**
    * System shutdown logic.
    */
-  private def stopSystem(code: Int): Unit = {
-    messagingSystem.stop()
+  private def stopSystem(system: ActorSystem)(code: Int): Unit = {
+    Try(messagingSystem.stop())
 
     system.terminate().onComplete {
       case Success(_) => System.exit(code)
