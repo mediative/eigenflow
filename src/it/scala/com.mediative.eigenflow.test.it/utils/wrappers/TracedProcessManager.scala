@@ -8,9 +8,10 @@ import com.mediative.eigenflow.StagedProcess
 import com.mediative.eigenflow.process.ProcessManager
 import com.mediative.eigenflow.process.ProcessManager.ProcessingDateState
 import com.mediative.eigenflow.publisher.MessagingSystem
+import com.typesafe.config.ConfigFactory
 
 object TracedProcessManager {
-  private implicit def messagingSystem = new MessagingSystem {
+  private implicit def messagingSystem = new MessagingSystem(ConfigFactory.empty()) {
     override def publish(topic: String, message: String)(implicit log: LoggingAdapter): Unit = () // ignore
   }
 
@@ -22,7 +23,7 @@ object TracedProcessManager {
   class TracedProcessManager(process: StagedProcess,
       date: Option[Date],
       receiver: ActorRef,
-      id: Option[String] = None) extends ProcessManager(process, date) {
+      id: Option[String] = None) extends ProcessManager(process, date, id.getOrElse("test")) {
 
     override def persistenceId: String = id.getOrElse(super.persistenceId)
 

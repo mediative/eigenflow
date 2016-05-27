@@ -7,6 +7,7 @@ import com.mediative.eigenflow.domain.ProcessContext
 import com.mediative.eigenflow.domain.messages._
 import com.mediative.eigenflow.helpers.DateHelper._
 import com.mediative.eigenflow.publisher.{ MessagingSystem, ProcessPublisher }
+import com.typesafe.config.ConfigFactory
 import org.scalatest.FreeSpec
 import org.scalatest.mock.MockitoSugar
 import upickle.default._
@@ -19,7 +20,7 @@ class ProcessPublisherTest extends FreeSpec {
   class TestContext {
     val processContext = ProcessContext.default(new Date(0))
 
-    val mockMessagingSystem = new MessagingSystem {
+    val mockMessagingSystem = new MessagingSystem(ConfigFactory.empty()) {
       val publishedMessages = mutable.ArrayBuffer[(String, String)]()
 
       override def publish(topic: String, message: String)(implicit log: LoggingAdapter): Unit = {

@@ -17,8 +17,18 @@
 package com.mediative.eigenflow.publisher
 
 import akka.event.LoggingAdapter
+import com.typesafe.config.Config
 
-trait MessagingSystem {
+object MessagingSystem {
+  def create(config: Config) = {
+    Class.forName(config.getString("eigenflow.messaging")).
+      getConstructor(classOf[Config])
+      .newInstance(config)
+      .asInstanceOf[MessagingSystem]
+  }
+}
+
+abstract class MessagingSystem(config: Config) {
   def publish(topic: String, message: String)(implicit log: LoggingAdapter): Unit
   def stop(): Unit = ()
 }
