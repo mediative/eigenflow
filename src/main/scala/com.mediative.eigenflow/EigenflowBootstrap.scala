@@ -22,6 +22,7 @@ import com.mediative.eigenflow.helpers.DateHelper._
 import com.mediative.eigenflow.process.ProcessManager.Continue
 import com.mediative.eigenflow.process.ProcessSupervisor
 import com.mediative.eigenflow.publisher.MessagingSystem
+import com.typesafe.config.Config
 
 import scala.util.{ Failure, Success, Try }
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -36,18 +37,22 @@ trait EigenflowBootstrap {
    */
   def process: StagedProcess
 
+  private val config: Config = loadConfig()
+  protected def loadConfig(): Config = ConfigurationLoader.config
+
   // bootstrap the system: initialize akka, message publisher ...
-  implicit val messagingSystem = Class.forName(ConfigurationLoader.config.getString("eigenflow.messaging")).
-    getConstructor().newInstance().asInstanceOf[MessagingSystem]
+  implicit val messagingSystem = MessagingSystem.create(config)
 
   // load environment variables
   private val startDate = Option(System.getenv("start")).flatMap(parse)
 
   // initialize actor system as late as possible (fix for Issue #29)
-  implicit val system = ActorSystem("DataFlow", ConfigurationLoader.config)
+  implicit val system = ActorSystem("DataFlow", config)
+
+  private val processTypeId = config.getString("process.id")
 
   // create main actor and tell to proceed.
-  system.actorOf(ProcessSupervisor.props(process, startDate, stopSystem(system))) ! Continue
+  system.actorOf(ProcessSupervisor.props(process, startDate, processTypeId, stopSystem(system))) ! Continue
 
   /**
    * System shutdown logic.

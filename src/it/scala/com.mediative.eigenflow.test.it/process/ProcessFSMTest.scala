@@ -31,7 +31,7 @@ class ProcessFSMTest extends EigenflowIntegrationTest {
     "for Stage1 ~> Stage2" - {
       "expect transition: Initial -> Stage1 -> Stage2 -> Complete" in {
         system.actorOf(
-          TracedProcessFSM.props(`Stage1 ~> Stage2`, new Date)
+          TracedProcessFSM.props(`Stage1 ~> Stage2`, new Date, "test")
         ) ! Start
 
         val result = expectMsgType[Seq[ProcessStage]](5.seconds)
@@ -43,7 +43,7 @@ class ProcessFSMTest extends EigenflowIntegrationTest {
     "for Stage1(retry) ~> Stage2" - {
       "expect transition: Initial -> Stage1 -> Retry -> Stage1 -> Stage2 -> Complete" in {
         system.actorOf(
-          TracedProcessFSM.props(`Stage1(retry) ~> Stage2`, new Date)
+          TracedProcessFSM.props(`Stage1(retry) ~> Stage2`, new Date, "test")
         ) ! Start
 
         val result = expectMsgType[Seq[ProcessStage]](5.seconds)
@@ -55,7 +55,7 @@ class ProcessFSMTest extends EigenflowIntegrationTest {
     "for Stage1(Complete) ~> Stage2" - {
       "expect transition: Initial -> Stage1 -> Complete" in {
         system.actorOf(
-          TracedProcessFSM.props(`Stage1(Complete) ~> Stage2`, new Date)
+          TracedProcessFSM.props(`Stage1(Complete) ~> Stage2`, new Date, "test")
         ) ! Start
 
         val result = expectMsgType[Seq[ProcessStage]](5.seconds)
@@ -67,7 +67,7 @@ class ProcessFSMTest extends EigenflowIntegrationTest {
     "for Stage1 ~> Stage2(FailOnce) ~> Stage3" - {
       "expect transition: Initial -> Stage1 -> Stage2 -> Failed" in {
         system.actorOf(
-          TracedProcessFSM.props(`Stage1 ~> Stage2(FailOnce) ~> Stage3`, new Date)
+          TracedProcessFSM.props(`Stage1 ~> Stage2(FailOnce) ~> Stage3`, new Date, "test")
         ) ! Start
 
         val result = expectMsgType[Seq[ProcessStage]](5.seconds)
@@ -78,7 +78,7 @@ class ProcessFSMTest extends EigenflowIntegrationTest {
       "expect restart from the failed stage" in {
         val date = new Date
         system.actorOf(
-          TracedProcessFSM.props(`Stage1 ~> Stage2(FailOnce) ~> Stage3`, date)
+          TracedProcessFSM.props(`Stage1 ~> Stage2(FailOnce) ~> Stage3`, date, "test")
         ) ! Start
 
         val result = expectMsgType[Seq[ProcessStage]](5.seconds)
@@ -86,7 +86,7 @@ class ProcessFSMTest extends EigenflowIntegrationTest {
         assert(result == Seq(Initial, Stage1, Stage2, Failed))
 
         system.actorOf(
-          TracedProcessFSM.props(`Stage1 ~> Stage2(FailOnce) ~> Stage3`, date)
+          TracedProcessFSM.props(`Stage1 ~> Stage2(FailOnce) ~> Stage3`, date, "test")
         ) ! Start
 
         val result2 = expectMsgType[Seq[ProcessStage]](5.seconds)
@@ -97,7 +97,7 @@ class ProcessFSMTest extends EigenflowIntegrationTest {
       "start over again if forced" in {
         val date = new Date
         system.actorOf(
-          TracedProcessFSM.props(`Stage1 ~> Stage2(FailOnce) ~> Stage3`, date)
+          TracedProcessFSM.props(`Stage1 ~> Stage2(FailOnce) ~> Stage3`, date, "test")
         ) ! Start
 
         val result = expectMsgType[Seq[ProcessStage]](5.seconds)
@@ -105,7 +105,7 @@ class ProcessFSMTest extends EigenflowIntegrationTest {
         assert(result == Seq(Initial, Stage1, Stage2, Failed))
 
         system.actorOf(
-          TracedProcessFSM.props(`Stage1 ~> Stage2(FailOnce) ~> Stage3`, date, reset = true)
+          TracedProcessFSM.props(`Stage1 ~> Stage2(FailOnce) ~> Stage3`, date, "test", reset = true)
         ) ! Start
 
         val result2 = expectMsgType[Seq[ProcessStage]](5.seconds)

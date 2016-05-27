@@ -17,8 +17,9 @@
 package com.mediative.eigenflow.publisher
 
 import akka.event.LoggingAdapter
+import com.typesafe.config.Config
 
-class PrintMessagingSystem extends MessagingSystem {
+class PrintMessagingSystem(config: Config) extends MessagingSystem(config) {
   override def publish(topic: String, message: String)(implicit log: LoggingAdapter): Unit = {
     log.info(s"Publishing to $topic :\n$message\n")
   }

@@ -22,7 +22,6 @@ import akka.actor.SupervisorStrategy.Escalate
 import akka.actor.{ ActorLogging, OneForOneStrategy, Props, SupervisorStrategy }
 import akka.persistence.PersistentActor
 import com.mediative.eigenflow.StagedProcess
-import com.mediative.eigenflow.environment.ProcessConfiguration
 import com.mediative.eigenflow.helpers.DateHelper._
 import com.mediative.eigenflow.publisher.MessagingSystem
 
@@ -46,11 +45,9 @@ private[eigenflow] object ProcessManager {
  * The process parent actor which creates FSM actors which actually run processes based on processingDate.
  *
  */
-private[eigenflow] class ProcessManager(process: StagedProcess, startDate: Option[Date])(implicit val messagingSystem: MessagingSystem) extends PersistentActor with ActorLogging {
+private[eigenflow] class ProcessManager(process: StagedProcess, startDate: Option[Date], processTypeId: String)(implicit val messagingSystem: MessagingSystem) extends PersistentActor with ActorLogging {
 
   import com.mediative.eigenflow.process.ProcessManager._
-
-  private val config = ProcessConfiguration.load
 
   override def supervisorStrategy: SupervisorStrategy = {
     OneForOneStrategy() {
@@ -62,7 +59,7 @@ private[eigenflow] class ProcessManager(process: StagedProcess, startDate: Optio
 
   override protected def onPersistFailure(cause: Throwable, event: Any, seqNr: Long): Unit = fail
 
-  override def persistenceId: String = s"${config.id}-manager"
+  override def persistenceId: String = s"${processTypeId}-manager"
 
   override def receiveRecover: Receive = {
     case ProcessingDateState(date, complete) =>
@@ -82,7 +79,7 @@ private[eigenflow] class ProcessManager(process: StagedProcess, startDate: Optio
       if (processingDate.before(now) || processingDate.equals(now)) {
         persist(ProcessingDateState(processingDate, complete = false)) { event =>
           // TODO: think of a better way to couple `startDate` and `reset`
-          val processFSM = context.actorOf(Props(new ProcessFSM(process, processingDate, reset = startDate.isDefined)))
+          val processFSM = context.actorOf(Props(new ProcessFSM(process, processingDate, processTypeId, reset = startDate.isDefined)))
 
           context.become(waitResult(processingDate))
           processFSM ! ProcessFSM.Continue

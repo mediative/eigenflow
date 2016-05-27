@@ -24,7 +24,6 @@ import com.mediative.eigenflow.StagedProcess
 import com.mediative.eigenflow.domain.RecoveryStrategy.{ Fail, Retry }
 import com.mediative.eigenflow.domain.fsm._
 import com.mediative.eigenflow.domain.{ ProcessContext, RecoveryStrategy, RetryRegistry }
-import com.mediative.eigenflow.environment.ProcessConfiguration
 import com.mediative.eigenflow.process.ProcessFSM.{ CompleteExecution, Continue, FailExecution }
 import com.mediative.eigenflow.process.ProcessManager.{ ProcessComplete, ProcessFailed }
 import com.mediative.eigenflow.publisher.{ MessagingSystem, ProcessPublisher }
@@ -47,10 +46,10 @@ import scala.util.{ Failure, Success }
  */
 private[eigenflow] class ProcessFSM(process: StagedProcess,
   processingDate: Date,
+  processTypeId: String,
   reset: Boolean = false)(implicit override val domainEventClassTag: ClassTag[ProcessEvent],
     override val publisher: MessagingSystem)
     extends Actor with PersistentFSM[ProcessStage, ProcessContext, ProcessEvent] with ProcessPublisher with ActorLogging {
-  private val processTypeId = ProcessConfiguration.load.id
 
   // define persistence id depending on the processing date, it makes processes independent of each other.
   // it also gives flexibility to redefine processing flow w/o need to clean the history,

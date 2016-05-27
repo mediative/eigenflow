@@ -19,11 +19,10 @@ package com.mediative.eigenflow.publisher.kafka
 import java.util.Properties
 
 import com.mediative.eigenflow.environment.ConfigurationLoader
+import com.typesafe.config.Config
 
 object KafkaConfiguration {
-  private val config = ConfigurationLoader.config
-
-  def properties(): Properties = {
+  def properties(config: Config): Properties = {
     val propertiesKeys = Seq(
       "bootstrap.servers",
       "acks",

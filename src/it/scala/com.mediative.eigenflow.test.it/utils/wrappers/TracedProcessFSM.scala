@@ -26,18 +26,19 @@ import com.mediative.eigenflow.domain.fsm.{ ProcessEvent, ProcessStage }
 import com.mediative.eigenflow.process.ProcessFSM
 import com.mediative.eigenflow.process.ProcessFSM.Continue
 import com.mediative.eigenflow.publisher.MessagingSystem
+import com.typesafe.config.ConfigFactory
 
 object TracedProcessFSM {
 
-  implicit def messagingSystem = new MessagingSystem {
+  implicit def messagingSystem = new MessagingSystem(ConfigFactory.empty()) {
     override def publish(topic: String, message: String)(implicit log: LoggingAdapter): Unit = () // ignore
   }
 
-  def props(process: StagedProcess, date: Date, reset: Boolean = false) = Props(new TracedProcessFSM(process, date, reset))
+  def props(process: StagedProcess, date: Date, processTypeId: String, reset: Boolean = false) = Props(new TracedProcessFSM(process, date, processTypeId, reset))
 
   case object Start
 
-  class TracedProcessFSM(process: StagedProcess, date: Date, reset: Boolean) extends ProcessFSM(process, date, reset) {
+  class TracedProcessFSM(process: StagedProcess, date: Date, processTypeId: String, reset: Boolean) extends ProcessFSM(process, date, processTypeId, reset) {
     private var originalSender = sender
     private var stagesRegistry: Seq[ProcessStage] = Seq.empty
 
