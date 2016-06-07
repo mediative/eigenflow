@@ -24,8 +24,9 @@ import com.mediative.eigenflow.process.ProcessSupervisor
 import com.mediative.eigenflow.publisher.MessagingSystem
 import com.typesafe.config.Config
 
-import scala.util.{ Failure, Success, Try }
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent._
+import scala.concurrent.duration._
+import scala.util.Try
 
 /**
  * Creates the actor system and start processing.
@@ -60,9 +61,17 @@ trait EigenflowBootstrap {
   private def stopSystem(system: ActorSystem)(code: Int): Unit = {
     Try(messagingSystem.stop())
 
-    system.terminate().onComplete {
-      case Success(_) => System.exit(code)
-      case Failure(_) => System.exit(1)
+    // in case if termination process hangs
+    try {
+      val terminationProcess = system.terminate()
+
+      Await.result(terminationProcess, 10.seconds)
+      System.exit(code)
+    } catch {
+      case t: Throwable =>
+        t.printStackTrace()
+        System.err.println("Timeout actor system termination. Forcing system exit.")
+        Runtime.getRuntime.halt(1) // force quit with status code 1
     }
   }
 }

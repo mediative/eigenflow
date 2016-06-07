@@ -67,6 +67,11 @@ private[eigenflow] class ProcessFSM(process: StagedProcess,
     super.preStart()
   }
 
+  override protected def onPersistFailure(cause: Throwable, event: Any, seqNr: Long): Unit = {
+    super.onPersistFailure(cause, event, seqNr)
+    throw cause
+  }
+
   /**
    * Update context data and publish events as process moves from stage to stage.
    */

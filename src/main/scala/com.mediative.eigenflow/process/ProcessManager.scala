@@ -45,7 +45,8 @@ private[eigenflow] object ProcessManager {
  * The process parent actor which creates FSM actors which actually run processes based on processingDate.
  *
  */
-private[eigenflow] class ProcessManager(process: StagedProcess, startDate: Option[Date], processTypeId: String)(implicit val messagingSystem: MessagingSystem) extends PersistentActor with ActorLogging {
+private[eigenflow] class ProcessManager(process: StagedProcess, startDate: Option[Date], processTypeId: String)(implicit val messagingSystem: MessagingSystem)
+    extends PersistentActor with ActorLogging {
 
   import com.mediative.eigenflow.process.ProcessManager._
 
