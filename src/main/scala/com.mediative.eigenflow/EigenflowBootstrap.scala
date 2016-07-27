@@ -26,7 +26,7 @@ import com.typesafe.config.Config
 
 import scala.concurrent._
 import scala.concurrent.duration._
-import scala.util.Try
+import scala.util.{ Failure, Success, Try }
 
 /**
  * Creates the actor system and start processing.
@@ -61,17 +61,22 @@ trait EigenflowBootstrap {
   private def stopSystem(system: ActorSystem)(code: Int): Unit = {
     Try(messagingSystem.stop())
 
-    // in case if termination process hangs
-    try {
-      val terminationProcess = system.terminate()
+    val terminationProcess = system.terminate()
 
-      Await.result(terminationProcess, 10.seconds)
-      System.exit(code)
-    } catch {
-      case t: Throwable =>
-        t.printStackTrace()
-        System.err.println("Timeout actor system termination. Forcing system exit.")
-        Runtime.getRuntime.halt(1) // force quit with status code 1
+    import scala.concurrent.ExecutionContext.Implicits.global
+
+    val timeoutFuture = Future { //in case system.terminate hangs
+      Thread.sleep(10000)
+      throw new TimeoutException("actorsystem.terminate timed out.  Force shutdown.")
     }
+
+    Future.firstCompletedOf(List(terminationProcess, timeoutFuture)).onComplete {
+      case Success(_) =>
+        System.exit(code)
+      case Failure(ex) =>
+        ex.printStackTrace()
+        Runtime.getRuntime.halt(1)
+    }
+
   }
 }
