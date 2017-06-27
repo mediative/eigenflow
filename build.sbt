@@ -1,13 +1,13 @@
 organization in ThisBuild := "com.mediative"
 name in ThisBuild         := "eigenflow"
-scalaVersion in ThisBuild := "2.11.7"
+scalaVersion in ThisBuild := "2.11.11"
 
 Jvm.`1.8`.required
 
 // Dependencies
 resolvers += Resolver.bintrayRepo("krasserm", "maven")
 
-val akkaVersion = "2.4.4"
+val akkaVersion = "2.4.19"
 val kafkaVersion = "0.9.0.0"
 
 libraryDependencies ++= Seq(
